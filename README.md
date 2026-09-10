@@ -52,7 +52,6 @@ Execution
 Simply run the main script in your terminal or command prompt:
 
 Bash
-
 python main.py
 
 ---
@@ -75,15 +74,15 @@ The suite guides users through a structured 5-stage workflow:
 📄 Output Formats Overview
 When saving calculation logs, the built-in export system formats output automatically based on your selected file extension:
 
-•  JSON (.json): Formatted key-value dictionary structure.
+ •  JSON (.json): Formatted key-value dictionary structure.
 
-•  CSV (.csv): Standard comma-separated layout suitable for Excel/data tools.
+ •  CSV (.csv): Standard comma-separated layout suitable for Excel/data tools.
 
-•  Markdown (.md): Formatted Markdown table ready for documentation.
+ •  Markdown (.md): Formatted Markdown table ready for documentation.
 
-•  YAML (.yaml): Clean key-value structural data.
+ •  YAML (.yaml): Clean key-value structural data.
 
-•  INI / Config (.ini, .conf): Configuration section layout.
+ •  INI / Config (.ini, .conf): Configuration section layout.
 
 ---
 
