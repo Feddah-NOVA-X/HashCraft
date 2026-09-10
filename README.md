@@ -1,4 +1,4 @@
-# HashCraft tool
+# HashCraft Tool
 
 
 A lightweight, cross-platform CLI tool built in Python for cryptographic file integrity verification, checksum generation, directory hashing, and multi-format result logging.
@@ -59,15 +59,15 @@ python main.py
 🔄 How It Works (Execution Lifecycle)
 The suite guides users through a structured 5-stage workflow:
 
-Stage 1: Input Setup — Select the target hash algorithm (e.g., SHA-256) and provide a file path, multiple files, or a folder.
+*Stage 1*: Input Setup — Select the target hash algorithm (e.g., SHA-256) and provide a file path, multiple files, or a folder.
 
-Stage 2: Checksum Calculation — The engine reads files in binary chunks with real-time visual progress indicators.
+*Stage 2*: Checksum Calculation — The engine reads files in binary chunks with real-time visual progress indicators.
 
-Stage 3: Result Display — Hashes are displayed with customizable path formatting (Full Path, Short Path, or Filename only).
+*Stage 3*: Result Display — Hashes are displayed with customizable path formatting (Full Path, Short Path, or Filename only).
 
-Stage 4: File Export (Optional) — Results are serialized and saved to your chosen format and path.
+*Stage 4*: File Export (Optional) — Results are serialized and saved to your chosen format and path.
 
-Stage 5: Clean Exit — Memory and execution history are cleared safely before returning or exiting.
+*Stage 5*: Clean Exit — Memory and execution history are cleared safely before returning or exiting.
 
 ---
 
@@ -87,4 +87,4 @@ When saving calculation logs, the built-in export system formats output automati
 ---
 
 📜 License
-Distributed under the MIT License. See LICENSE for details.
+    ◌ Distributed under the MIT License. See LICENSE for details.
