@@ -87,4 +87,5 @@ When saving calculation logs, the built-in export system formats output automati
 ---
 
 📜 License
+
     ◌ Distributed under the MIT License. See LICENSE for details.
