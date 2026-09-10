@@ -52,6 +52,7 @@ Execution
 Simply run the main script in your terminal or command prompt:
 
 Bash
+
 python main.py
 
 ---
