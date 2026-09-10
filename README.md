@@ -1,4 +1,5 @@
-# 🔐 File Integrity & Hasher Suite
+# HashCraft tool
+
 
 A lightweight, cross-platform CLI tool built in Python for cryptographic file integrity verification, checksum generation, directory hashing, and multi-format result logging.
 
@@ -40,3 +41,50 @@ The project automatically detects the underlying operating system and normalizes
 ├── hasher.py          # Core Hasher class & stage lifecycle controller
 ├── verification.py    # Input validators, path resolvers, and multi-format exporters
 └── ui.py              # Terminal UI utilities, progress bars, and screen management
+```
+---
+
+🚀 Quick Start
+Prerequisites
+Python 3.8 or higher (No third-party packages required).
+
+Execution
+Simply run the main script in your terminal or command prompt:
+
+Bash
+python main.py
+
+---
+
+🔄 How It Works (Execution Lifecycle)
+The suite guides users through a structured 5-stage workflow:
+
+Stage 1: Input Setup — Select the target hash algorithm (e.g., SHA-256) and provide a file path, multiple files, or a folder.
+
+Stage 2: Checksum Calculation — The engine reads files in binary chunks with real-time visual progress indicators.
+
+Stage 3: Result Display — Hashes are displayed with customizable path formatting (Full Path, Short Path, or Filename only).
+
+Stage 4: File Export (Optional) — Results are serialized and saved to your chosen format and path.
+
+Stage 5: Clean Exit — Memory and execution history are cleared safely before returning or exiting.
+
+---
+
+📄 Output Formats Overview
+When saving calculation logs, the built-in export system formats output automatically based on your selected file extension:
+
+•  JSON (.json): Formatted key-value dictionary structure.
+
+•  CSV (.csv): Standard comma-separated layout suitable for Excel/data tools.
+
+•  Markdown (.md): Formatted Markdown table ready for documentation.
+
+•  YAML (.yaml): Clean key-value structural data.
+
+•  INI / Config (.ini, .conf): Configuration section layout.
+
+---
+
+📜 License
+Distributed under the MIT License. See LICENSE for details.
