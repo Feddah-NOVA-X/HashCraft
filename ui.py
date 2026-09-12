@@ -85,3 +85,4 @@ def show_progress_bar(percentage, text="Processing"):
 def new_last_percent():
     global last_percent
     last_percent = 0
+    

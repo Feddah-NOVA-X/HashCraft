@@ -9,6 +9,7 @@ from tkinter import filedialog
 
 import ui
 
+
 # --- دوال لتحقق/المساعدة الاساسية ---
 
 def get_default_folder():
@@ -99,6 +100,47 @@ def shorten_path(path, max_length=50):
     return path[:10] + "..." + path[-20:]
 
 
+def warning_messages(path, p_type='file'):
+    p_type = p_type.lower()
+    i = ""
+    not_type = f"\n[!] The input path is not a {i}. Make sure you enter a {i} or go back to change the 'Hash Target' type."
+    
+    if not path:
+        print("\n[!] You cannot enter a blank space. Please enter a valid folder path.")
+        ui.custom_time(2)
+        return False
+    
+    if len(path) < 5:
+        print("\n[!] The folder path must be at least 5-10 characters long.")
+        ui.custom_time(2)
+        return False
+    
+    if not os.path.exists(path):
+        print(f"\n[!] The entered {p_type} is incorrect/does not exist on your device!")
+        ui.custom_time(2)
+        return False
+    
+    if p_type == 'folder':          
+        if not os.path.isdir(path):
+            i = "folder"
+            print(not_type)
+            ui.custom_time(3)
+            return False
+    elif p_type == 'zip':
+        if not path.lower().endswith('.zip'):
+            i = "zip file"
+            print(not_type)
+            ui.custom_time(3)
+            return False
+    else:
+        if not os.path.isfile(path):
+            i = "file"
+            print(not_type)
+            ui.custom_time(3)
+            return False
+    return {"path": path, "type": p_type}
+
+
 # --- دوال الاخذ الاولي من المستخدم\قبل حساب الهاش ---
 
 def get_valid_hash_type(default="SHA-256"):
@@ -139,28 +181,6 @@ def get_valid_hash_type(default="SHA-256"):
         ui.custom_time(1)
         return False
 
-def is_valid_file_path(file_path):
-    file_path = clean_path(file_path)
-    if not file_path.strip():
-        print("\n[!] You cannot enter a blank space. Please enter a valid file path.")
-        ui.custom_time(2)
-        return False
-    
-    if len(file_path.strip()) < 5:
-        print("\n[!] The file path must be at least 5-10 characters long.")
-        ui.custom_time(2)
-        return False
-    
-    if not os.path.exists(file_path):
-        print("\n[!] The entered file is incorrect/does not exist on your device!")
-        ui.custom_time(2)
-        return False
-        
-    if not os.path.isfile(file_path):
-        print("\n[!] The input path is not a file. Make sure you enter a file or go back to change the 'Hash Target' type.")
-        ui.custom_time(3)
-        return False
-    return file_path
 
 def get_valid_path():
     try:
@@ -169,6 +189,7 @@ def get_valid_path():
             1. Single file
             2. Several files
             3. Folder
+            4. Compressed file (ZIP)
         \n""")
         
         user_number = input(f"Enter your choise | 0] Back: ")
@@ -178,18 +199,16 @@ def get_valid_path():
         if user_number == '1':
             while True:
                 ui.clear()
-                file_path = input("\nDrag/drop | copy/paste file path | 0] back: ").strip().strip('"')
+                file_path = clean_path(input("\nDrag/drop | copy/paste file path | 0] back: "))
                 if file_path == '0': 
                     ui.clear()
                     return get_valid_path()
                     
-                is_valid = is_valid_file_path(file_path)
-                if is_valid is False:
+                valid_file_path = warning_messages(file_path, "file")
+                if valid_file_path is False:
                     continue
                 
-                file_path = is_valid
-                    
-                return {"path": file_path, "type": "file"}
+                return valid_file_path
         
         elif user_number == '2':
             files_list = []
@@ -197,7 +216,7 @@ def get_valid_path():
                 ui.clear()
                 print(f"\nNumber of files currently being entered: [{len(files_list)} files]\n")
                 
-                file_path = input("Drag/drop | copy/paste file path | d] Done | 0] back: ").strip().strip('"')
+                file_path = clean_path(input("Drag/drop | copy/paste file path | d] Done | 0] back: "))
                 if file_path == '0':
                     ui.clear()
                     return get_valid_path()
@@ -210,11 +229,9 @@ def get_valid_path():
                     
                     return {"list": files_list, "type": "files"}
                 
-                is_valid = is_valid_file_path(file_path)
-                if is_valid is False:
+                check_file = warning_messages(file_path, "file")
+                if check_file is False:
                     continue
-                
-                file_path = is_valid
                 
                 if file_path in files_list:
                     print(f"\n[!] File path: [{file_path}] has already been added.")
@@ -234,28 +251,26 @@ def get_valid_path():
                     ui.clear()
                     return get_valid_path()
                 
-                if not folder_path.strip():
-                    print("\n[!] You cannot enter a blank space. Please enter a valid folder path.")
-                    ui.custom_time(2)
+                valid_folder = warning_messages(file_path, "folder")
+                if valid_folder is False:
                     continue
                 
-                if len(folder_path.strip()) < 5:
-                    print("\n[!] The folder path must be at least 5-10 characters long.")
-                    ui.custom_time(2)
-                    continue
-                
-                if not os.path.exists(folder_path):
-                    print("\n[!] The entered folder is incorrect/does not exist on your device!")
-                    ui.custom_time(2)
-                    continue
-                                    
-                elif not os.path.isdir(folder_path):
-                    print("\n[!] The input path is not a folder. Make sure you enter a folder or go back to change the 'Hash Target' type.")
-                    ui.custom_time(3)
-                    continue
-                
-                return {"path": folder_path, "type": "folder"}
+                return valid_folder
         
+        elif user_number == '4':
+            while True:
+                ui.clear()
+                zip_path = clean_path(input("\nDrag/drop | copy/paste ZIP file path | 0] Back: "))
+                if zip_path == '0':
+                    ui.clear()
+                    return get_valid_path()
+                
+                valid_zip_file = warning_messages(zip_path, 'zip')
+                if valid_zip_file is False:
+                    continue
+                
+                return valid_zip_file
+                
         else:
             print("\nPlease enter a number from 1-3 | or 0 to go back.")
             ui.custom_time(1.2)
@@ -508,6 +523,8 @@ def set_file_title_type(results, file_title, file_type, hash_type):
                       [i] Choose an option:
                           [Y] Replace the existing file
                           [N] Choose a different name
+                          [A] Add - Append
+                          [T] Append with timestamp
                           [0] Back
                 """)
                 
@@ -515,16 +532,16 @@ def set_file_title_type(results, file_title, file_type, hash_type):
                 if replace_file == '0': return None
                 
                 if replace_file in ['y', 'yes']:
-                    print("[✅] Replacement completed successfully.")
-                    ui.custom_time(1)
-                    ui.clear()
-                    return True
+                    return "replace"
                     
                 elif replace_file in ['n', 'no']:
-                    print("\n[i] Please choose a different file name.")
-                    ui.custom_time(1.5)
-                    ui.clear()
                     return "change file title"
+                
+                elif replace_file in ['a', 'add', 'append']:
+                    return "append"
+                
+                elif replace_file in ['t', 'temp', 'timetemp']:
+                    return "timetemp"
                 
                 print(f"\n[!] Invalid choice. Please choose from the list.")
                 ui.custom_time(1.5)
@@ -541,6 +558,7 @@ def set_file_title_type(results, file_title, file_type, hash_type):
     ui.custom_time(1)
             
     while True:
+        mode = 'w'
         ui.new_last_percent()
         file_title = set_title()
         if file_title is None: return None
@@ -576,18 +594,40 @@ def set_file_title_type(results, file_title, file_type, hash_type):
                 ui.custom_time(0.1)
                 res = is_file_path_exists(file_path)
                 
-                if res is None: return None
-                if isinstance(res, str) and res.lower() == "change file title":
-                    print("\nYou will be taken back to the file naming page...")
+                if res is None: 
+                    print("\n[!] Save cancelled. Returning...")
                     ui.custom_time(2)
-                    continue
+                    return None 
+                if isinstance(res, str):
+                    lower_res = res.lower()
+                    if lower_res == "change file title":
+                        print("\n[i] Please choose a different file name.")
+                        ui.custom_time(1.2)
+                        print("You will be taken back to the file naming page...")
+                        ui.custom_time(1.5)
+                        continue
+                    elif res == "replace":
+                        print("[✅] Replacement completed successfully.")
+                        ui.custom_time(1)
+                        ui.clear()
+                        mode = "w"
+                    elif lower_res == "append":
+                        mode = "a"
+                    elif lower_res == "timetemp":
+                        mode = "t"
                 
                 save_path = file_path
                 
             elif save_choice == '2':
                 ui.show_progress_bar(30, "Opening save dialog...")
                 ui.custom_time(0.1)
-                save_path = choose_save_path(file_title, file_type, hash_type)
+                saved_path = save_hash_results(
+                    results,
+                    save_path,
+                    hash_type,
+                    default_folder,
+                    mode=mode  # "w", "a", أو "t"
+                )
         else:
             print(f"\n[!] Unable to confirm continued saving. Please try again.")
             ui.custom_time(2)
@@ -620,100 +660,168 @@ def set_file_title_type(results, file_title, file_type, hash_type):
             ui.custom_time(1.5)
             continue
         
-def save_hash_results(results, file_name, hash_type, default_folder):
+
+
+def save_hash_results(results, file_name, hash_type, default_folder, mode="w"):
     """
-    تحفظ النتائج في الملف المحدد.
-    يتم استخراج الصيغة تلقائياً من امتداد الملف.
-    """
-    if isinstance(default_folder, str):
-        default_folder = Path(default_folder)
+    تحفظ النتائج في ملف حسب الصيغة المختارة.
     
+    mode:
+      - "w" : استبدال المحتوى القديم
+      - "a" : إضافة إلى نهاية الملف
+      - "t" : إضافة مع وقت وتاريخ (Timestamp)
+    
+    الصيغ المدعومة: txt, json, csv, md, yaml, yml, xml, log, properties, hash
+    """
+    
+    # دمج المجلد مع اسم الملف
+    default_folder = Path(default_folder)
     file_path = default_folder / file_name
-    # استخراج الامتداد
-    _, file_type = os.path.splitext(file_path)
+    _, file_type = os.path.splitext(str(file_path))
     file_type = file_type.lower()
     
-    # نفس الكود السابق لتوليد المحتوى حسب الصيغة
+    # للصيغ المهيكلة (JSON, YAML) مع وضع الإضافة
+    merged_results = results
+    if mode in ["a", "t"] and file_type in [".json", ".yaml", ".yml"] and file_path.exists():
+        try:
+            if file_type == ".json":
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    existing = json.load(f)
+            elif file_type in [".yaml", ".yml"]:
+                import yaml
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    existing = yaml.safe_load(f) or {}
+            
+            if isinstance(existing, dict) and isinstance(results, dict):
+                existing.update(results)
+                merged_results = existing
+        except Exception as e:
+            print(f"[⚠️] Could not merge existing file: {e}")
+            merged_results = results
+    
+    # ==========================================
+    # توليد المحتوى حسب الصيغة
+    # ==========================================
+    
+    # 1. TXT
     if file_type == ".txt":
         content = ""
-        if isinstance(results, dict):
-            for key, value in results.items():
+        if isinstance(merged_results, dict):
+            for key, value in merged_results.items():
                 content += f"{key}: {value}\n"
         else:
-            content = str(results)
-
+            content = str(merged_results)
+    
+    # 2. JSON
     elif file_type == ".json":
-        content = json.dumps(results, indent=2, ensure_ascii=False)
-
+        content = json.dumps(merged_results, indent=2, ensure_ascii=False)
+    
+    # 3. CSV
     elif file_type == ".csv":
         import io
         output = io.StringIO()
         writer = csv.writer(output)
         writer.writerow(["File", "Hash"])
-        if isinstance(results, dict):
-            for key, value in results.items():
+        if isinstance(merged_results, dict):
+            for key, value in merged_results.items():
                 writer.writerow([key, value])
         content = output.getvalue()
-
+    
+    # 4. Markdown
     elif file_type == ".md":
         content = "# Hash Results\n\n"
         content += "| File | Hash |\n"
         content += "|------|------|\n"
-        if isinstance(results, dict):
-            for key, value in results.items():
+        if isinstance(merged_results, dict):
+            for key, value in merged_results.items():
                 content += f"| {key} | {value} |\n"
-
+    
+    # 5. YAML
     elif file_type in [".yaml", ".yml"]:
         try:
             import yaml
-            if isinstance(results, dict):
-                content = yaml.dump(results, default_flow_style=False, allow_unicode=True)
+            if isinstance(merged_results, dict):
+                content = yaml.dump(merged_results, default_flow_style=False, allow_unicode=True)
             else:
-                content = str(results)
+                content = str(merged_results)
         except ImportError:
-            content = str(results)
+            content = str(merged_results)
             print("⚠️ PyYAML is not installed, saved as plain text.")
-
+    
+    # 6. XML
     elif file_type == ".xml":
         content = '<?xml version="1.0" encoding="UTF-8"?>\n<files>\n'
-        if isinstance(results, dict):
-            for key, value in results.items():
+        if isinstance(merged_results, dict):
+            for key, value in merged_results.items():
                 content += f'  <file path="{key}" hash="{value}" />\n'
         content += "</files>"
-
+    
+    # 7. Hash file (.sha256, .md5, ...)
     elif file_type == f".{hash_type.lower()}":
-        if isinstance(results, dict):
+        if isinstance(merged_results, dict):
             content = ""
-            for path, hash_value in results.items():
-                file_name = os.path.basename(path)
-                content += f"{file_name}: {hash_value}\n"
+            for path, hash_value in merged_results.items():
+                file_name_only = os.path.basename(path)
+                content += f"{file_name_only}: {hash_value}\n"
         else:
-            content = str(results)
-
+            content = str(merged_results)
+    
+    # 8. LOG
     elif file_type == ".log":
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         content = f"[{timestamp}] Hash Results:\n\n"
-        if isinstance(results, dict):
-            for key, value in results.items():
+        if isinstance(merged_results, dict):
+            for key, value in merged_results.items():
                 content += f"{key}: {value}\n"
         else:
-            content += str(results)
-
+            content += str(merged_results)
+    
+    # 9. Properties
     elif file_type == ".properties":
         content = ""
-        if isinstance(results, dict):
-            for key, value in results.items():
+        if isinstance(merged_results, dict):
+            for key, value in merged_results.items():
                 content += f"{key} = {value}\n"
         else:
-            content = str(results)
-
-    else:
-        content = str(results)
-
-    # حفظ الملف
-    with open(file_path, 'w', encoding='utf-8') as f:
-        f.write(content)
+            content = str(merged_results)
     
-    return str(file_path)
- 
+    # 10. Fallback
+    else:
+        content = str(merged_results)
+    
+    # ==========================================
+    # تحديد وضع الحفظ
+    # ==========================================
+    
+    # دمج التاريخ مع المحتوى إذا كان mode = "t"
+    if mode == "t":
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        header = f"\n--- {timestamp} ---\n"
+        content = header + content
+    
+    # تحديد وضع فتح الملف
+    if mode in ["a", "t"] and file_type not in [".json", ".yaml", ".yml", ".xml", ".csv"]:
+        # للصيغ النصية: إضافة في النهاية
+        open_mode = "a"
+    else:
+        # للصيغ المهيكلة أو الاستبدال: كتابة فوق
+        open_mode = "w"
+    
+    # ==========================================
+    # الحفظ
+    # ==========================================
+    
+    try:
+        with open(file_path, open_mode, encoding='utf-8') as f:
+            f.write(content)
+        return str(file_path)
+    
+    except PermissionError:
+        return f"[Error] Permission denied: {file_path}"
+    except OSError as e:
+        if e.errno == 28:
+            return "[Error] Insufficient storage space."
+        return f"[Error] {e}"
+    except Exception as e:
+        return f"[Error] {e}"
  

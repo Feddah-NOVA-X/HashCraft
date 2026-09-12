@@ -1,6 +1,7 @@
 import hashlib
 import os
 import ui
+import time
 
 class Hasher:
     def __init__(self, hash_type="SHA-256"):
@@ -14,6 +15,7 @@ class Hasher:
         self._hash_file_name = "hashes"
         
         self._files_path_list = []
+        self.zip_path = ""
         self.results = {}
         
         self._current_stage = 0
@@ -30,6 +32,7 @@ class Hasher:
         self._hash_file_name = "hashes"
         
         self._files_path_list = []
+        self.zip_path = ""
         self.results = {}
         self._current_stage = 0
         print("\n✅ The history has been cleared. You can start over or exit.")
@@ -134,6 +137,13 @@ class Hasher:
                         clear_list.append(f"\n{i}. {p}{comma}")
                         
                     user_choice = ' '.join(clear_list)
+                
+                elif user_choice.get("type") == "zip":
+                    current["key"] = "zip_path"
+                    zip_file = user_choice.get("path", "")
+                    setattr(self, current["key"], zip_file)
+                    self._target_path = user_choice
+                    is_set = True
                     
                 current["label"] = f"{file_type.title()} path"
             
@@ -258,6 +268,41 @@ class Hasher:
                 except Exception as e:
                     results[file_path] = f"[Error] {e}"
         
+        elif self.zip_path and self._target_path["type"] == "zip":
+            hasher = hasher_func()
+            res = self.get_zip_hash(hasher, way_dis, show_progress=True)
+            if isinstance(res, dict):
+                status = res.get("status", "error")
+                
+                if status == "error":
+                    print(f"❌ {res.get('message', 'Unexpected error occurred.')}")
+                    ui.custom_time(3)
+                    return {}
+                
+                elif status == "success":
+                    # استخراج الهاش وإضافته للنتائج
+                    hash_value = res.get("hash")
+                    if hash_value:
+                        file_path = res.get("file", self.zip_path)
+                        
+                        results[file_path] = hash_value
+                    else:
+                        print("❌ No hash value returned.")
+                        ui.custom_time(2)
+                        return {}
+                
+                else:
+                    print("❌ Sorry! An unexpected error occurred.")
+                    ui.custom_time(2)
+                    return {}
+            
+            else:
+                # إذا رجعت نص (خطأ من الدالة)
+                print(f"❌ {res}")
+                ui.custom_time(2)
+                return {}
+            
+        
         # حالة المجلد
         elif self._target_path["type"] == "folder":
             folder_path = self._target_path["path"]
@@ -317,7 +362,95 @@ class Hasher:
         ui.show_progress_bar(100, "Done!")
         ui.custom_time(0.5)
         ui.new_last_percent()
+        if results in ["[Error]", "[Warning]"]:
+            print(results)
+            ui.custom_time(3)
+            return {}
         return results
+
+
+    def get_zip_hash(self, hasher, way_dis="full path", show_progress=True):
+        """
+        يحسب هاش ملف مضغوط (ZIP) مع شريط تقدم.
+        
+        hasher: كائن hashlib (md5, sha1, sha256, sha512)
+        show_progress: هل نعرض شريط التقدم؟
+        """
+        display_path = self.zip_path if way_dis == "full path" else way_dis(self.zip_path)
+        
+        # 1. التحقق من وجود الملف
+        if not os.path.exists(self.zip_path):
+            return {"status": "error", "message": f"File not found: {self.zip_path}"}
+        
+        # 2. التحقق من أن الملف ZIP
+        if not self.zip_path.lower().endswith('.zip'):
+            return {"status": "error", "message": f"Not a ZIP file: {self.zip_path}"}
+        
+        # 3. الحصول على حجم الملف
+        try:
+            total_size = os.path.getsize(self.zip_path)
+        except OSError as e:
+            return {"status": "error", "message": f"Cannot read file size: {e}"}
+        
+        # 4. حساب الهاش مع شريط التقدم
+        try:
+            start_time = time.time()
+            processed = 0
+            chunk_size = 65536  # 64KB (أفضل للملفات الكبيرة)
+            
+            with open(self.zip_path, 'rb') as f:
+                while True:
+                    chunk = f.read(chunk_size)
+                    if not chunk:
+                        break
+                    
+                    hasher.update(chunk)
+                    processed += len(chunk)
+                    
+                    # عرض شريط التقدم
+                    if show_progress and total_size > 0:
+                        percentage = (processed / total_size) * 100
+                        processed_mb = processed / (1024 * 1024)
+                        total_mb = total_size / (1024 * 1024)
+                        
+                        bar_length = 40
+                        filled = int(bar_length * processed // total_size)
+                        bar = '█' * filled + '░' * (bar_length - filled)
+                        
+                        print(
+                            f"\r\033[K[{bar}] {percentage:.1f}% "
+                            f"({processed_mb:.1f}/{total_mb:.1f} MB)",
+                            end="", flush=True
+                        )
+            
+            # 5. النتيجة النهائية
+            if show_progress:
+                print()  # سطر جديد بعد اكتمال الشريط
+            
+            elapsed = time.time() - start_time
+            hash_value = hasher.hexdigest()
+            
+            return {
+                "status": "success",
+                "hash": hash_value,
+                "file": display_path,
+                "size_bytes": total_size,
+                "size_mb": round(total_size / (1024 * 1024), 2),
+                "time_seconds": round(elapsed, 2),
+                "algorithm": hasher.name
+            }
+        
+        except PermissionError:
+            return {"status": "error", "message": "Permission denied. Run as Administrator."}
+        
+        except OSError as e:
+            if e.errno == 28:
+                return {"status": "error", "message": "Insufficient storage space."}
+            return {"status": "error", "message": f"System error: {e}"}
+        
+        except Exception as e:
+            return {"status": "error", "message": f"Unexpected error: {e}"}
+
 
     def _display_results(self, results={}):
         if not results or not self.results:
