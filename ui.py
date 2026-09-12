@@ -12,14 +12,29 @@ last_percent = 0
 
 def start():
     from hasher import Hasher
-    print('\n'*2)
-    print(f"{' '*20}--- Hash calculator ---")
-    print('\n'*2)
     
-    print("Description:")
-    print(f"{' '*5}- You can calculate the hash of any file and specify the type of hash you want.\n\n")
+    print('\n' * 2)
+    print(f"{' ' * 20}🔐 --- HashCraft v1.0 --- 🔐")
+    print('\n' * 2)
     
-    user_input = input("Press any key to start | 0] Exit: ")
+    print("📖 Description:")
+    print(f"{' ' * 5}- Calculate the hash of any file with multiple algorithms.")
+    print(f"{' ' * 5}- Support for single files, folders, and multiple files.\n")
+    
+    print("📋 Supported Output Formats:")
+    print(f"{' ' * 5}- .txt, .json, .csv, .md, .yaml, .xml, .log, .properties\n")
+    
+    print("🚀 Upcoming Features:")
+    print(f"{' ' * 5}- Batch hashing for multiple compressed files/folders.")
+    print(f"{' ' * 5}- Support for ZIP, TAR, and RAR archives.\n")
+    
+    print("💡 Quick Start:")
+    print(f"{' ' * 5}- Follow the on-screen prompts to get started.\n")
+    
+    print("─" * 60)
+    print()
+    
+    user_input = input("\nPress any key to start | 0] Exit (ctrl + c): ")
     if user_input == '0':
         exit_program()
         clear()
