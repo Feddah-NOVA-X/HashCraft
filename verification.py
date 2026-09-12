@@ -181,7 +181,6 @@ def get_valid_hash_type(default="SHA-256"):
         ui.custom_time(1)
         return False
 
-
 def get_valid_path():
     try:
         print("""\n
@@ -251,7 +250,7 @@ def get_valid_path():
                     ui.clear()
                     return get_valid_path()
                 
-                valid_folder = warning_messages(file_path, "folder")
+                valid_folder = warning_messages(folder_path, "folder")
                 if valid_folder is False:
                     continue
                 
@@ -276,8 +275,8 @@ def get_valid_path():
             ui.custom_time(1.2)
             return False
         
-    except Exception:
-        print("\n[!] Invalid input value.")
+    except Exception as e:
+        print(f"\n[!] Invalid input value.")
         ui.custom_time(1)
         return False
     
@@ -660,8 +659,6 @@ def set_file_title_type(results, file_title, file_type, hash_type):
             ui.custom_time(1.5)
             continue
         
-
-
 def save_hash_results(results, file_name, hash_type, default_folder, mode="w"):
     """
     تحفظ النتائج في ملف حسب الصيغة المختارة.
