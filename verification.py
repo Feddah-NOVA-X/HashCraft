@@ -400,6 +400,7 @@ def set_file_title_type(results, file_title, file_type, hash_type):
     file_type = file_type
     per_title = ""
     default_folder = get_default_folder()
+    mode = "w"
     
     def set_title():
         nonlocal per_title
@@ -409,7 +410,7 @@ def set_file_title_type(results, file_title, file_type, hash_type):
             try:
                 if per_title:
                     print("\n[System Help]: Choose the previous name [if you do not want to create a new one]")
-                    print(f"P] Pre-selected file name [{per_title}]\n")
+                    print(f"pre] Pre-selected file name [{per_title}]\n")
                     
                 user_file_title = input(f"Enter your file name (don't use '.') | d] Default [{Default}] | 0] Back: ").split(".")[0]
                 if not user_file_title.strip():
@@ -420,7 +421,7 @@ def set_file_title_type(results, file_title, file_type, hash_type):
                 if user_file_title == '0':
                     return None
                 
-                if user_file_title.lower() in ['p', 'pre']:
+                if user_file_title.lower() == 'pre':
                     if not per_title:
                         print("\n❌ No previous name! Create one.")
                         ui.custom_time(1.5)
@@ -431,7 +432,7 @@ def set_file_title_type(results, file_title, file_type, hash_type):
                         user_file_title = per_title
                 
                 if user_file_title.lower() in ['d', 'default']:
-                    user_file_title = file_title
+                    user_file_title = Default
                 
                 per_title = user_file_title
                 print(f"[✅] Your file name: {user_file_title}")
@@ -503,7 +504,7 @@ def set_file_title_type(results, file_title, file_type, hash_type):
                 continue       
                 
     def is_file_path_exists(file_path):
-        nonlocal file_title
+        nonlocal file_title, mode
         full_path = os.path.join(default_folder, file_path)
         if os.path.exists(full_path):
             print(f"\n{'─' * 60}")
@@ -513,6 +514,7 @@ def set_file_title_type(results, file_title, file_type, hash_type):
             print(f"\n{'─' * 60}")
             ui.custom_time(1)
         else:
+            mode = "w"
             return True
         
         while True:
@@ -557,7 +559,6 @@ def set_file_title_type(results, file_title, file_type, hash_type):
     ui.custom_time(1)
             
     while True:
-        mode = 'w'
         ui.new_last_percent()
         file_title = set_title()
         if file_title is None: return None
@@ -606,27 +607,30 @@ def set_file_title_type(results, file_title, file_type, hash_type):
                         ui.custom_time(1.5)
                         continue
                     elif res == "replace":
+                        mode = "w"
                         print("[✅] Replacement completed successfully.")
                         ui.custom_time(1)
                         ui.clear()
-                        mode = "w"
                     elif lower_res == "append":
                         mode = "a"
+                        print("[i] New results will be ADDED to the end of the file.")
+                        ui.custom_time(1)
+                        if file_type in [".json", ".yaml", ".yml", ".xml", ".csv"]:
+                            print("\n[i] Note: For structured formats, 'Append' merges data.")
+                            print("    Existing entries will be kept, new entries added.")
+                            ui.custom_time(2)
+                        ui.clear()
                     elif lower_res == "timetemp":
                         mode = "t"
+                        print("[i] New results will be added with a timestamp header.")
+                        ui.custom_time(1)
                 
                 save_path = file_path
                 
             elif save_choice == '2':
                 ui.show_progress_bar(30, "Opening save dialog...")
                 ui.custom_time(0.1)
-                saved_path = save_hash_results(
-                    results,
-                    save_path,
-                    hash_type,
-                    default_folder,
-                    mode=mode  # "w", "a", أو "t"
-                )
+                save_path = choose_save_path(file_title, file_type, hash_type)
         else:
             print(f"\n[!] Unable to confirm continued saving. Please try again.")
             ui.custom_time(2)
@@ -639,7 +643,13 @@ def set_file_title_type(results, file_title, file_type, hash_type):
             ui.custom_time(0.1)
             
             try:
-                saved_path = save_hash_results(results, save_path, hash_type, default_folder)
+                saved_path = save_hash_results(
+                    results,
+                    save_path,
+                    hash_type,
+                    default_folder,
+                    mode=mode  # "w", "a", أو "t"
+                )
             except Exception as e:
                 print(f"\n[❌] Error saving file: {e}")
                 ui.custom_time(2)
