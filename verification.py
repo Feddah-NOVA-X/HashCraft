@@ -102,8 +102,8 @@ def shorten_path(path, max_length=50):
 
 def warning_messages(path, p_type='file'):
     p_type = p_type.lower()
-    i = ""
-    not_type = f"\n[!] The input path is not a {i}. Make sure you enter a {i} or go back to change the 'Hash Target' type."
+   
+    not_type = f"\n[!] The input path is not a {p_type}. Make sure you enter a {p_type} or go back to change the 'Hash Target' type."
     
     if not path:
         print("\n[!] You cannot enter a blank space. Please enter a valid folder path.")
@@ -122,23 +122,69 @@ def warning_messages(path, p_type='file'):
     
     if p_type == 'folder':          
         if not os.path.isdir(path):
-            i = "folder"
             print(not_type)
             ui.custom_time(3)
             return False
     elif p_type == 'zip':
         if not path.lower().endswith('.zip'):
-            i = "zip file"
             print(not_type)
             ui.custom_time(3)
             return False
     else:
         if not os.path.isfile(path):
-            i = "file"
             print(not_type)
             ui.custom_time(3)
             return False
     return {"path": path, "type": p_type}
+
+def get_single_file():
+    while True:
+        ui.clear()
+        file_path = clean_path(input("\nDrag/drop | copy/paste file path | 0] back: "))
+        if file_path == '0': 
+            ui.clear()
+            return get_valid_path()
+            
+        valid_file_path = warning_messages(file_path, "file")
+        if valid_file_path is False:
+            continue
+        
+        return valid_file_path
+    
+def get_several_files(file_type):
+    files_list = []
+    t_type = "ZIP" if file_type == "zip" else file_type
+    while True:
+        ui.clear()
+        print(f"\nNumber of {t_type}(s) currently being entered: [{len(files_list)} {t_type}(s)]\n")
+        
+        file_path = clean_path(input(f"Drag/drop | copy/paste {t_type} path | d] Done | 0] back: "))
+        if file_path == '0':
+            ui.clear()
+            return get_valid_path()
+        
+        if file_path.lower() in ['d', "done"]:
+            if not files_list:
+                print(f"\n[!] No input {t_type}(s) were found, Add at least one {t_type}!")
+                ui.custom_time(1.2)
+                continue
+            if file_type == 'file':
+                file_type = "files"
+            return {"list": files_list, "type": file_type}
+        
+        check_file = warning_messages(file_path, file_type)
+        if check_file is False:
+            continue
+        
+        if file_path in files_list:
+            print(f"\n[!] {t_type} path: [{file_path}] has already been added.")
+            ui.custom_time(1.5)
+            continue
+        
+        files_list.append(file_path)
+        print(f"\n[✅] {t_type} path: [{file_path}] has been added.")
+        ui.custom_time(1.2)
+        continue
 
 
 # --- دوال الاخذ الاولي من المستخدم\قبل حساب الهاش ---
@@ -187,8 +233,8 @@ def get_valid_path():
             Do you want to calculate the hash like:
             1. Single file
             2. Several files
-            3. Folder
-            4. Compressed file (ZIP)
+            3. Folder(s)
+            4. Compressed file(s) (ZIP)
         \n""")
         
         user_number = input(f"Enter your choise | 0] Back: ")
@@ -196,82 +242,19 @@ def get_valid_path():
             return None
         
         if user_number == '1':
-            while True:
-                ui.clear()
-                file_path = clean_path(input("\nDrag/drop | copy/paste file path | 0] back: "))
-                if file_path == '0': 
-                    ui.clear()
-                    return get_valid_path()
-                    
-                valid_file_path = warning_messages(file_path, "file")
-                if valid_file_path is False:
-                    continue
-                
-                return valid_file_path
+            return get_single_file()
         
         elif user_number == '2':
-            files_list = []
-            while True:
-                ui.clear()
-                print(f"\nNumber of files currently being entered: [{len(files_list)} files]\n")
-                
-                file_path = clean_path(input("Drag/drop | copy/paste file path | d] Done | 0] back: "))
-                if file_path == '0':
-                    ui.clear()
-                    return get_valid_path()
-                
-                if file_path.lower() in ['d', "done"]:
-                    if not files_list:
-                        print("\n[!] No input files were found, Add at least one file!")
-                        ui.custom_time(1.2)
-                        continue
-                    
-                    return {"list": files_list, "type": "files"}
-                
-                check_file = warning_messages(file_path, "file")
-                if check_file is False:
-                    continue
-                
-                if file_path in files_list:
-                    print(f"\n[!] File path: [{file_path}] has already been added.")
-                    ui.custom_time(1.5)
-                    continue
-                
-                files_list.append(file_path)
-                print(f"\n[✅] File path: [{file_path}] has been added.")
-                ui.custom_time(1.2)
-                continue
+            return get_several_files(file_type="file")
                     
         elif user_number == '3':
-            while True:
-                ui.clear()
-                folder_path = clean_path(input("\nDrag/drop | copy/paste folder path | 0] back: "))
-                if folder_path == '0':
-                    ui.clear()
-                    return get_valid_path()
-                
-                valid_folder = warning_messages(folder_path, "folder")
-                if valid_folder is False:
-                    continue
-                
-                return valid_folder
+            return get_several_files(file_type="folder")
         
         elif user_number == '4':
-            while True:
-                ui.clear()
-                zip_path = clean_path(input("\nDrag/drop | copy/paste ZIP file path | 0] Back: "))
-                if zip_path == '0':
-                    ui.clear()
-                    return get_valid_path()
-                
-                valid_zip_file = warning_messages(zip_path, 'zip')
-                if valid_zip_file is False:
-                    continue
-                
-                return valid_zip_file
+            return get_several_files(file_type="zip")
                 
         else:
-            print("\nPlease enter a number from 1-3 | or 0 to go back.")
+            print("\nPlease enter a number from 1-4 | or 0 to go back.")
             ui.custom_time(1.2)
             return False
         

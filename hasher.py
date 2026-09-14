@@ -15,7 +15,6 @@ class Hasher:
         self._hash_file_name = "hashes"
         
         self._files_path_list = []
-        self.zip_path = ""
         self.results = {}
         
         self._current_stage = 0
@@ -125,7 +124,7 @@ class Hasher:
             if isinstance(user_choice, dict):
                 file_type = user_choice.get("type", "file")
                 
-                if user_choice.get("type") == "files":
+                if "list" in user_choice.keys():
                     current["key"] = "_files_path_list"
                     files = user_choice.get("list", [])
                     setattr(self, current["key"], files)
@@ -137,13 +136,6 @@ class Hasher:
                         clear_list.append(f"\n{i}. {p}{comma}")
                         
                     user_choice = ' '.join(clear_list)
-                
-                elif user_choice.get("type") == "zip":
-                    current["key"] = "zip_path"
-                    zip_file = user_choice.get("path", "")
-                    setattr(self, current["key"], zip_file)
-                    self._target_path = user_choice
-                    is_set = True
                     
                 current["label"] = f"{file_type.title()} path"
             
@@ -243,162 +235,137 @@ class Hasher:
         ui.show_progress_bar(0, "Starting hash calculation...")
         ui.custom_time(0.5)
         
-        # حالة عدة ملفات
-        if self._files_path_list:
-            total_files = len(self._files_path_list)
-            for idx, file_path in enumerate(self._files_path_list, start=1):
-                hasher = hasher_func()
-                try:
+        # ✅ كل شي من الليست
+        file_list = self._files_path_list if self._files_path_list else []
+        
+        if not file_list:
+            print("\n[!] No files to process.")
+            ui.custom_time(2)
+            return {}
+        
+        total_files = len(file_list)
+        
+        for idx, file_path in enumerate(file_list, start=1):
+            hasher = hasher_func()
+            
+            # ✅ اكتشف نوع المسار من نفسه
+            is_zip = file_path.lower().endswith('.zip')
+            is_folder = os.path.isdir(file_path)
+            
+            try:
+                # ============================
+                # حالة ZIP
+                # ============================
+                if is_zip:
+                    self.zip_path = file_path  # ← مهم
+                    
+                    progress = int(((idx - 1) / total_files) * 100)
+                    ui.show_progress_bar(progress, f"Processing ZIP {idx}/{total_files}: {os.path.basename(file_path)}")
+                    
+                    res = self.get_zip_hash(hasher, way_dis, show_progress=True)
+                    
+                    if isinstance(res, dict) and res.get("status") == "success":
+                        hash_value = res.get("hash")
+                        if hash_value:
+                            display_path = file_path if way_dis == "full path" else way_dis(file_path)
+                            results[display_path] = hash_value
+                        else:
+                            results[file_path] = "[Error] No hash value"
+                    else:
+                        msg = res.get('message', 'Unknown error') if isinstance(res, dict) else str(res)
+                        results[file_path] = f"[Error] {msg}"
+                
+                # ============================
+                # حالة Folder
+                # ============================
+                elif is_folder:
+                    all_files = []
+                    for root, _, files in os.walk(file_path):
+                        for f in files:
+                            all_files.append(os.path.join(root, f))
+                    
+                    sub_total = len(all_files)
+                    if sub_total == 0:
+                        results[file_path] = "[Warning] Empty folder"
+                        continue
+                    
+                    for sub_idx, full_path in enumerate(all_files, start=1):
+                        sub_hasher = hasher_func()
+                        try:
+                            with open(full_path, 'rb') as f:
+                                for chunk in iter(lambda: f.read(65536), b''):
+                                    sub_hasher.update(chunk)
+                            
+                            progress = int(((idx - 1) / total_files + (sub_idx / sub_total) / total_files) * 100)
+                            ui.show_progress_bar(
+                                progress,
+                                f"[{idx}/{total_files}] {os.path.basename(full_path)}"
+                            )
+                            
+                            display_path = full_path if way_dis == "full path" else way_dis(full_path)
+                            results[display_path] = sub_hasher.hexdigest()
+                        
+                        except Exception as e:
+                            results[full_path] = f"[Error] {e}"
+                
+                # ============================
+                # حالة ملف عادي
+                # ============================
+                else:
                     with open(file_path, 'rb') as f:
-                        for chunk in iter(lambda: f.read(4096), b''):
+                        for chunk in iter(lambda: f.read(65536), b''):
                             hasher.update(chunk)
                     
-                    # تحديث شريط التقدم بناءً على عدد الملفات
                     progress = int((idx / total_files) * 100)
                     ui.show_progress_bar(
                         progress,
-                        f"Processing file {idx} of {total_files}: {os.path.basename(file_path)}"
+                        f"Processing file {idx}/{total_files}: {os.path.basename(file_path)}"
                     )
-                    ui.custom_time(0.1)
                     
-                    # حفظ النتيجة
                     display_path = file_path if way_dis == "full path" else way_dis(file_path)
                     results[display_path] = hasher.hexdigest()
-                    
-                except Exception as e:
-                    results[file_path] = f"[Error] {e}"
-        
-        elif self.zip_path and self._target_path["type"] == "zip":
-            hasher = hasher_func()
-            res = self.get_zip_hash(hasher, way_dis, show_progress=True)
-            if isinstance(res, dict):
-                status = res.get("status", "error")
-                
-                if status == "error":
-                    print(f"❌ {res.get('message', 'Unexpected error occurred.')}")
-                    ui.custom_time(3)
-                    return {}
-                
-                elif status == "success":
-                    # استخراج الهاش وإضافته للنتائج
-                    hash_value = res.get("hash")
-                    if hash_value:
-                        file_path = res.get("file", self.zip_path)
-                        
-                        results[file_path] = hash_value
-                    else:
-                        print("❌ No hash value returned.")
-                        ui.custom_time(2)
-                        return {}
-                
-                else:
-                    print("❌ Sorry! An unexpected error occurred.")
-                    ui.custom_time(2)
-                    return {}
             
-            else:
-                # إذا رجعت نص (خطأ من الدالة)
-                print(f"❌ {res}")
-                ui.custom_time(2)
-                return {}
-            
-        
-        # حالة المجلد
-        elif self._target_path["type"] == "folder":
-            folder_path = self._target_path["path"]
-            all_files = []
-            for root, _, files in os.walk(folder_path):
-                for file in files:
-                    all_files.append(os.path.join(root, file))
-            
-            total_files = len(all_files)
-            ui.show_progress_bar(0, f"Found {total_files} files in folder. Starting...")
-            ui.custom_time(0.5)
-            
-            for idx, full_path in enumerate(all_files, start=1):
-                hasher = hasher_func()
-                try:
-                    with open(full_path, 'rb') as f:
-                        for chunk in iter(lambda: f.read(4096), b''):
-                            hasher.update(chunk)
-                    
-                    progress = int((idx / total_files) * 100)
-                    ui.show_progress_bar(
-                        progress,
-                        f"Processing file {idx} of {total_files}: {os.path.basename(full_path)}"
-                    )
-                    ui.custom_time(0.1)
-                    
-                    display_path = full_path if way_dis == "full path" else way_dis(full_path)
-                    results[display_path] = hasher.hexdigest()
-                    
-                except Exception as e:
-                    results[full_path] = f"[Error] {e}"
-        
-        # حالة ملف واحد
-        else:
-            file_path = self._target_path["path"]
-            ui.show_progress_bar(30, "Opening file...")
-            ui.custom_time(0.3)
-            
-            hasher = hasher_func()
-            try:
-                with open(file_path, 'rb') as f:
-                    ui.show_progress_bar(60, "Reading file...")
-                    ui.custom_time(0.3)
-                    
-                    for chunk in iter(lambda: f.read(4096), b''):
-                        hasher.update(chunk)
-                
-                ui.show_progress_bar(90, "Calculating hash...")
-                ui.custom_time(0.3)
-                
-                display_path = file_path if way_dis == "full path" else way_dis(file_path)
-                results[display_path] = hasher.hexdigest()
-                
+            except FileNotFoundError:
+                results[file_path] = "[Error] File not found"
+            except PermissionError:
+                results[file_path] = "[Error] Permission denied"
             except Exception as e:
                 results[file_path] = f"[Error] {e}"
         
         ui.show_progress_bar(100, "Done!")
         ui.custom_time(0.5)
         ui.new_last_percent()
-        if results in ["[Error]", "[Warning]"]:
-            print(results)
-            ui.custom_time(3)
-            return {}
+        
         return results
 
 
     def get_zip_hash(self, hasher, way_dis="full path", show_progress=True):
-        """
-        يحسب هاش ملف مضغوط (ZIP) مع شريط تقدم.
+        """يحسب هاش ملف مضغوط (ZIP) مع شريط تقدم."""
         
-        hasher: كائن hashlib (md5, sha1, sha256, sha512)
-        show_progress: هل نعرض شريط التقدم؟
-        """
-        display_path = self.zip_path if way_dis == "full path" else way_dis(self.zip_path)
+        # ✅ استخدم ملف محلي (مهم)
+        zip_path = self.zip_path
         
-        # 1. التحقق من وجود الملف
-        if not os.path.exists(self.zip_path):
-            return {"status": "error", "message": f"File not found: {self.zip_path}"}
+        # 1. تحقق من وجود الملف
+        if not os.path.exists(zip_path):
+            return {"status": "error", "message": f"File not found: {zip_path}"}
         
-        # 2. التحقق من أن الملف ZIP
-        if not self.zip_path.lower().endswith('.zip'):
-            return {"status": "error", "message": f"Not a ZIP file: {self.zip_path}"}
+        # 2. تحقق من امتداد ZIP
+        if not zip_path.lower().endswith('.zip'):
+            return {"status": "error", "message": f"Not a ZIP file: {zip_path}"}
         
-        # 3. الحصول على حجم الملف
+        # 3. احصل على الحجم
         try:
-            total_size = os.path.getsize(self.zip_path)
+            total_size = os.path.getsize(zip_path)
         except OSError as e:
             return {"status": "error", "message": f"Cannot read file size: {e}"}
         
-        # 4. حساب الهاش مع شريط التقدم
+        # 4. احسب الهاش
         try:
             start_time = time.time()
             processed = 0
-            chunk_size = 65536  # 64KB (أفضل للملفات الكبيرة)
+            chunk_size = 65536
             
-            with open(self.zip_path, 'rb') as f:
+            with open(zip_path, 'rb') as f:
                 while True:
                     chunk = f.read(chunk_size)
                     if not chunk:
@@ -407,7 +374,6 @@ class Hasher:
                     hasher.update(chunk)
                     processed += len(chunk)
                     
-                    # عرض شريط التقدم
                     if show_progress and total_size > 0:
                         percentage = (processed / total_size) * 100
                         processed_mb = processed / (1024 * 1024)
@@ -423,12 +389,14 @@ class Hasher:
                             end="", flush=True
                         )
             
-            # 5. النتيجة النهائية
             if show_progress:
-                print()  # سطر جديد بعد اكتمال الشريط
+                print()
             
             elapsed = time.time() - start_time
             hash_value = hasher.hexdigest()
+            
+            # ✅ display_path محسوب
+            display_path = zip_path if way_dis == "full path" else way_dis(zip_path)
             
             return {
                 "status": "success",
@@ -450,7 +418,6 @@ class Hasher:
         
         except Exception as e:
             return {"status": "error", "message": f"Unexpected error: {e}"}
-
 
     def _display_results(self, results={}):
         if not results or not self.results:

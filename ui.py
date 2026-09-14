@@ -14,7 +14,7 @@ def start():
     from hasher import Hasher
     
     print('\n' * 2)
-    print(f"{' ' * 20}🔐 --- HashCraft v1.0 --- 🔐")
+    print(f"{' ' * 20}🔐 --- HashCraft v1.2 --- 🔐")
     print('\n' * 2)
     
     print("📖 Description:")
@@ -25,7 +25,7 @@ def start():
     print(f"{' ' * 5}- .txt, .json, .csv, .md, .yaml, .xml, .log, .properties\n")
     
     print("🚀 Upcoming Features:")
-    print(f"{' ' * 5}- Batch hashing for multiple compressed files/folders.")
+    print(f"{' ' * 5}- Batch hashing for multiple compressed files/folders. (✅ Added)")
     print(f"{' ' * 5}- Support for ZIP, TAR, and RAR archives.\n")
     
     print("💡 Quick Start:")
