@@ -238,7 +238,12 @@ class Hasher:
         
         # ✅ كل شي من الليست
         if self._target_path:
-            self._files_path_list.append(self._target_path)
+            target_path = None
+            if isinstance(self._target_path, dict):
+                target_path = self._target_path.get("path", None)
+            
+            if target_path:
+                self._files_path_list.append(target_path)
             
         file_list = self._files_path_list if self._files_path_list else []
         
@@ -251,7 +256,7 @@ class Hasher:
         
         for idx, file_path in enumerate(file_list, start=1):
             hasher = hasher_func()
-            
+                
             # ✅ اكتشف نوع المسار من نفسه
             is_zip = file_path.lower().endswith('.zip')
             is_folder = os.path.isdir(file_path)
