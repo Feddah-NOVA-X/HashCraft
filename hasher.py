@@ -15,6 +15,7 @@ class Hasher:
         self._hash_file_name = "hashes"
         
         self._files_path_list = []
+        self.zip_path = ""
         self.results = {}
         
         self._current_stage = 0
@@ -236,6 +237,9 @@ class Hasher:
         ui.custom_time(0.5)
         
         # ✅ كل شي من الليست
+        if self._target_path:
+            self._files_path_list.append(self._target_path)
+            
         file_list = self._files_path_list if self._files_path_list else []
         
         if not file_list:
